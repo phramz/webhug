@@ -8,6 +8,7 @@ import (
 	"strings"
 )
 
+const Deny string = "deny"
 const None string = "none"
 const Header string = "header"
 const Github string = "github"
@@ -28,6 +29,8 @@ func FromConfig(name string) contract.Security {
 		return &github{
 			secret: strings.ToLower(viper.GetString(fmt.Sprintf("webhug.webhooks.%s.security.secret", name))),
 		}
+	case Deny:
+		return &deny{}
 	case None:
 		return &none{}
 	}
