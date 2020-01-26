@@ -55,6 +55,16 @@ FROM gregthebunny/webhug
 COPY /path/to/your/config.yaml /etc/webhug/config.yaml
 ```
 
+As the image comes with a docker-in-docker setup (`FROM docker:19.03`) it enables you to
+run docker commands within your actions. To to so you need to mount your hosts docker socket into the 
+container:
+``` 
+docker run --rm -p 8080:8080 \
+    -v /path/to/your/config.yaml:/etc/webhug/config.yaml \
+    -v /var/run/docker.sock:/var/run/docker.sock \
+    gregthebunny/webhug docker info
+```
+
 ## Config
 
 All configuration has to be done in the `config.yaml` file. A working example can be found 

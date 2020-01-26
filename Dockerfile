@@ -6,7 +6,7 @@ WORKDIR /code
 COPY . .
 RUN apk add --no-cache build-base && make build
 
-FROM alpine:3.11 as final
+FROM docker:19.03 as final
 
 ARG RELEASE_VERSION
 ENV RELEASE_VERSION=${RELEASE_VERSION}
