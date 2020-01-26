@@ -18,9 +18,16 @@ func MustReadConfig() []contract.Webhook {
 	viper.AddConfigPath("/etc/webhug/")
 	viper.AddConfigPath("$HOME/.webhug")
 	viper.AddConfigPath(".")
-	err := viper.ReadInConfig()
-	if err != nil {
-		log.Fatal(fmt.Errorf("Fatal error config file: %s \n", err))
+	if err := viper.ReadInConfig(); err != nil {
+		if _, ok := err.(viper.ConfigFileNotFoundError); ok {
+			// fallback to example config
+			viper.SetConfigName("config-example")
+			if err := viper.ReadInConfig(); err != nil {
+				log.Fatal(fmt.Errorf("Fatal error config file: %s \n", err))
+			}
+		} else {
+			log.Fatal(fmt.Errorf("Fatal error config file: %s \n", err))
+		}
 	}
 
 	return parseWebhooks(viper.GetStringMap("webhug.webhooks"))

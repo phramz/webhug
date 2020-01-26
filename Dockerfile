@@ -11,10 +11,11 @@ FROM docker:19.03 as final
 ARG RELEASE_VERSION
 ENV RELEASE_VERSION=${RELEASE_VERSION}
 
-RUN mkdir -p /root/.webhug/
-WORKDIR /etc/webhug/
+RUN mkdir -p /root/.webhug/actions
+
+WORKDIR /root/.webhug/
 COPY --from=base /code/webhug /usr/bin/webhug
-COPY --from=base /code/config.yaml /root/.webhug/config.yaml
+COPY --from=base /code/config.yaml /root/.webhug/config-example.yaml
 
 EXPOSE 8080
 

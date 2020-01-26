@@ -64,11 +64,6 @@ docker run --rm -p 8080:8080 \
     -v /var/run/docker.sock:/var/run/docker.sock \
     gregthebunny/webhug 
 ```
-
-docker run --rm -p 8080:8080 \
-    -v /Users/mr/Devel/webhug/config.yaml:/etc/webhug/config.yaml \
-    -v /var/run/docker.sock:/var/run/docker.sock \
-    webhug:2cbc26acf7
     
 ## Config
 
@@ -80,17 +75,26 @@ in the project root:
 webhug:
   listen: ":8080"
   webhooks:
+    # "example" is the name of the webhook as well as the the endpoint uri eg:
+    # curl -H 'x-auth-token: top secret' -X POST -d '{"some": ["random", "json"]}' http://localhost:8080/example
     example:
+      # does not yet have any meaning due to only "custom" is supported by now
       format: custom
       security:
+        # one of "header" (match header value), "none" (no security at all), "deny" (deny all)
         type: header
         key: x-auth-token
         value: top secret
       action:
+        # one of "shell" (execute shell command), "none" (do nothing)
         type: shell
+        # if true stdout will be returned in the http response
         response: true
+        # the executable to run
         cmd: "/bin/sh"
+        # arguments that will be passed along to the executable
         args: ["-c", "cat; env; sleep 10;"]
+        # some extra environment variables that will be injected.
         env:
           - "CUSTOM_ENV_VAR1=hello"
           - "CUSTOM_ENV_VAR2=world!"
