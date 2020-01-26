@@ -1,4 +1,4 @@
-package security
+package crypto
 
 import "testing"
 
@@ -17,7 +17,7 @@ func TestGithubSign(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.signature, func(t *testing.T) {
-			s := githubSign([]byte(tt.payload), []byte(tt.secret))
+			s := GithubSign([]byte(tt.payload), []byte(tt.secret))
 			if s != tt.signature {
 				t.Errorf("got %q, want %q", s, tt.signature)
 			}

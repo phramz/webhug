@@ -3,7 +3,7 @@ webhug:
   listen: ":8080"
   webhooks:
     # "example" is the name of the webhook as well as the the endpoint uri eg:
-    # curl -H 'x-auth-token: top secret' -X POST -d '{"some": ["random", "json"]}' http://localhost:8080/example
+    # curl -H 'x-auth-token: top secret' -X POST -d '{"some": ["random", "json"]}' http://localhost:8080/example/
     example:
       # does not yet have any meaning due to only "custom" is supported by now
       format: custom

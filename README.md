@@ -11,13 +11,13 @@ make build
 ./webhug
 
 > INFO : 2020/01/25 18:25:03.520102 webhug.go:16: reading config ...
-> INFO : 2020/01/25 18:25:03.521061 webhug.go:20: setting up webhook 'example' at path '/example'
+> INFO : 2020/01/25 18:25:03.521061 webhug.go:20: setting up webhook 'example' at path '/example/'
 > INFO : 2020/01/25 18:25:03.521134 webhug.go:37: 🤗 webhug listening on :8080 ...
 ```
 
 With the default config you should now be able to try this:
 ``` 
-curl -H 'x-auth-token: top secret' -X POST -d '{"some": ["random", "json"]}' http://localhost:8080/example
+curl -H 'x-auth-token: top secret' -X POST -d '{"some": ["random", "json"]}' http://localhost:8080/example/
 
 > [example] {"some": ["random", "json"]}HOSTNAME=fbc56923c4e7
 > [example] SHLVL=1
@@ -76,7 +76,7 @@ webhug:
   listen: ":8080"
   webhooks:
     # "example" is the name of the webhook as well as the the endpoint uri eg:
-    # curl -H 'x-auth-token: top secret' -X POST -d '{"some": ["random", "json"]}' http://localhost:8080/example
+    # curl -H 'x-auth-token: top secret' -X POST -d '{"some": ["random", "json"]}' http://localhost:8080/example/
     example:
       # does not yet have any meaning due to only "custom" is supported by now
       format: custom
@@ -143,7 +143,7 @@ webhug:
 
 Trigger your webhook like that:
 ``` 
-curl -H 'x-any-header-you-like: abc123topsecrettoken' -X POST http://localhost:8080/example
+curl -H 'x-any-header-you-like: abc123topsecrettoken' -X POST http://localhost:8080/example/
 ```
 
 #### Github
@@ -176,6 +176,10 @@ environment variables will be available by default:
 - `WEBHUG_REQUEST_REMOTE_ADDR`: The remote address which triggered the action
 - `WEBHUG_REQUEST_HEADER`: All request headers json encoded
 
+## Github Actions
+
+If you want to trigger Webhugs out of your Github Actions you might find this useful:
+https://github.com/phramz/webhug-action
 
 ## License
 ``` 
