@@ -100,11 +100,73 @@ webhug:
           - "CUSTOM_ENV_VAR2=world!"
 ``` 
 
-## Actions
+### Security
+
+The security section lets you configure the authentication for each webhook.
+
+#### Deny
+
+This will deny every request. Might be useful to temporary disable a certain webhook:
+```yaml
+webhug:
+  webhooks:
+    example:
+      security:
+        type: deny
+``` 
+#### None
+
+*Please do not run any "open" webhooks in production .. nasty things can happen!*
+
+The following example will leave your webhook open for everyone: 
+```yaml
+webhug:
+  webhooks:
+    example:
+      security:
+        type: none
+``` 
+#### Header
+
+The most basic way of access control lets you define a shared secret to be present in the request header.
+This is not recommended but better then nothing. Always make sure that you make your endpoint SSL only!
+
+```yaml
+webhug:
+  webhooks:
+    example:
+      security:
+        type: header
+        key: x-any-header-you-like
+        value: abc123topsecrettoken
+``` 
+
+Trigger your webhook like that:
+``` 
+curl -H 'x-any-header-you-like: abc123topsecrettoken' -X POST http://localhost:8080/example
+```
+
+#### Github
+
+This will check for githubs `X-Hub-Signature` header and validates the digest using the shared secret:
+```yaml
+webhug:
+  webhooks:
+    example:
+      security:
+        type: github
+        secret: 123456789abcdefghi
+``` 
+
+Further readings:
+- https://developer.github.com/webhooks/securing/
+- https://developer.github.com/webhooks/
+
+### Actions
 
 By now there is only one action supported with more to come.
 
-### Shell
+#### Shell
 
 This will execute the given command and passes the request body to stdin (see example). The following
 environment variables will be available by default:

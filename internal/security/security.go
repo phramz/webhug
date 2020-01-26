@@ -10,6 +10,7 @@ import (
 
 const None string = "none"
 const Header string = "header"
+const Github string = "github"
 
 var (
 	log = logger.Logger()
@@ -22,6 +23,10 @@ func FromConfig(name string) contract.Security {
 		return &header{
 			key:   strings.ToLower(viper.GetString(fmt.Sprintf("webhug.webhooks.%s.security.key", name))),
 			value: strings.ToLower(viper.GetString(fmt.Sprintf("webhug.webhooks.%s.security.value", name))),
+		}
+	case Github:
+		return &github{
+			secret: strings.ToLower(viper.GetString(fmt.Sprintf("webhug.webhooks.%s.security.secret", name))),
 		}
 	case None:
 		return &none{}

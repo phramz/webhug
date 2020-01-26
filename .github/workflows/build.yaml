@@ -12,6 +12,8 @@ jobs:
       - uses: actions/checkout@v2
         with:
           ref: 'master'
+      - name: Test
+        run: make test
       - name: Build
         run: make image
       - name: Push
