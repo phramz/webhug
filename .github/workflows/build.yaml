@@ -21,3 +21,9 @@ jobs:
         env:
           DOCKERHUB_USERNAME: gregthebunny
           DOCKERHUB_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}
+      - uses: phramz/webhug-action@v1
+        with:
+          endpoint: ${{ secrets.WEBHUG_ENDPOINT }}
+          secret: ${{ secrets.WEBHUG_SECRET }}
+          ctype: 'text/plain'
+          payload: ${{ github.sha }}
