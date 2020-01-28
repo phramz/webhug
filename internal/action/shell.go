@@ -3,11 +3,10 @@ package action
 import (
 	"bufio"
 	"bytes"
-	"encoding/json"
 	"fmt"
 	"github.com/phramz/webhug/internal/contract"
+	"github.com/phramz/webhug/pkg/tpl"
 	"io"
-	"io/ioutil"
 	"net/http"
 	"os"
 	"os/exec"
@@ -25,15 +24,15 @@ func (sh *shell) HasResponse() bool {
 	return sh.response
 }
 
-func (sh *shell) Dispatch(wh contract.Webhook, rq *http.Request, res http.ResponseWriter) {
-	log.Infof("[%s] running action shell: %s", wh.GetName(), sh.cmd)
+func (sh *shell) Dispatch(ctx *contract.Context, res http.ResponseWriter) {
+	whName := tpl.MustRender(`{{ .Webhook.Name }}`, ctx)
+	log.Infof("[%s] running action shell: %s", whName, sh.cmd)
 
-	jsonHdr, _ := json.Marshal(rq.Header)
+	args := tpl.MustRenderAll(sh.args, ctx)
+	cmd := exec.Command(sh.cmd, args...)
+	setEnv(ctx, sh, cmd)
 
-	cmd := exec.Command(sh.cmd, sh.args...)
-	setEnv(wh, rq, jsonHdr, sh, cmd)
-
-	body, _ := ioutil.ReadAll(rq.Body)
+	body := []byte(tpl.MustRender(`{{ .Request.Body }}`, ctx))
 	cmd.Stdin = bytes.NewBuffer(body)
 
 	stdoutPipe, _ := cmd.StdoutPipe()
@@ -41,31 +40,32 @@ func (sh *shell) Dispatch(wh contract.Webhook, rq *http.Request, res http.Respon
 
 	err := cmd.Start()
 	if err != nil {
-		log.Errorf("[%s] action failed: %s", wh.GetName(), err)
+		log.Errorf("[%s] action failed: %s", whName, err)
 	}
 
-	wg := ioDispatcher(stdoutPipe, wh, sh, res, stderrPipe)
+	wg := ioDispatcher(ctx, sh, res, stdoutPipe, stderrPipe)
 	wg.Wait()
 
 	err = cmd.Wait()
 	if err != nil {
-		msg := fmt.Sprintf("[%s] action failed: %s", wh.GetName(), err)
+		msg := fmt.Sprintf("[%s] action failed: %s", whName, err)
 		if sh.response {
-			res.Write([]byte(msg))
+			_, _ = res.Write([]byte(msg))
 		}
 		log.Error(msg)
 	}
 }
 
-func ioDispatcher(stdoutPipe io.ReadCloser, wh contract.Webhook, sh *shell, res http.ResponseWriter, stderrPipe io.ReadCloser) *sync.WaitGroup {
+func ioDispatcher(ctx *contract.Context, sh *shell, res http.ResponseWriter, stdoutPipe io.ReadCloser, stderrPipe io.ReadCloser) *sync.WaitGroup {
+	whName := tpl.MustRender(`{{ .Webhook.Name }}`, ctx)
 	var wg sync.WaitGroup
 	wg.Add(1)
 	go func() {
 		scanner := bufio.NewScanner(stdoutPipe)
 		for scanner.Scan() {
-			msg := fmt.Sprintf("[%s] %s\n", wh.GetName(), scanner.Text())
+			msg := fmt.Sprintf("[%s] %s\n", whName, scanner.Text())
 			if sh.response {
-				res.Write([]byte(msg))
+				_, _ = res.Write([]byte(msg))
 				res.(http.Flusher).Flush()
 			}
 			log.Info(msg)
@@ -77,9 +77,9 @@ func ioDispatcher(stdoutPipe io.ReadCloser, wh contract.Webhook, sh *shell, res 
 	go func() {
 		scanner := bufio.NewScanner(stderrPipe)
 		for scanner.Scan() {
-			msg := fmt.Sprintf("[%s] %s\n", wh.GetName(), scanner.Text())
+			msg := fmt.Sprintf("[%s] %s\n", whName, scanner.Text())
 			if sh.response {
-				res.Write([]byte(msg))
+				_, _ = res.Write([]byte(msg))
 				res.(http.Flusher).Flush()
 			}
 			log.Warning(msg)
@@ -91,14 +91,16 @@ func ioDispatcher(stdoutPipe io.ReadCloser, wh contract.Webhook, sh *shell, res 
 	return &wg
 }
 
-func setEnv(wh contract.Webhook, rq *http.Request, jsonHdr []byte, sh *shell, cmd *exec.Cmd) {
+func setEnv(ctx *contract.Context, sh *shell, cmd *exec.Cmd) {
 	env := append(os.Environ(),
-		fmt.Sprintf("WEBHUG_WEBHOOK=%s", wh.GetName()),
-		fmt.Sprintf("WEBHUG_REQUEST_METHOD=%s", rq.Method),
-		fmt.Sprintf("WEBHUG_REQUEST_REMOTE_ADDR=%s", rq.RemoteAddr),
-		fmt.Sprintf("WEBHUG_REQUEST_HEADER=%s", jsonHdr),
+		tpl.MustRender(`WEBHUG_WEBHOOK={{ .Webhook.Name }}`, ctx),
+		tpl.MustRender(`WEBHUG_REQUEST_METHOD={{ .Request.Method }}`, ctx),
+		tpl.MustRender(`WEBHUG_REQUEST_REMOTE_ADDR={{ .Request.RemoteAddr }}`, ctx),
 	)
 
-	env = append(env, sh.env...)
+	for _, envVar := range sh.env {
+		env = append(env, tpl.MustRender(envVar, ctx))
+	}
+
 	cmd.Env = env
 }

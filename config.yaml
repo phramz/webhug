@@ -5,10 +5,8 @@ webhug:
     # "example" is the name of the webhook as well as the the endpoint uri eg:
     # curl -H 'x-auth-token: top secret' -X POST -d '{"some": ["random", "json"]}' http://localhost:8080/example/
     example:
-      # does not yet have any meaning due to only "custom" is supported by now
-      format: custom
       security:
-        # one of "header" (match header value), "none" (no security at all), "deny" (deny all)
+        # one of "header" (match header value), "github" (match x-hub-signature), "none" (no security at all), "deny" (deny all)
         type: header
         key: x-auth-token
         value: top secret
@@ -20,8 +18,88 @@ webhug:
         # the executable to run
         cmd: "/bin/sh"
         # arguments that will be passed along to the executable
-        args: ["-c", "cat; env; sleep 10;"]
+        args: ["-c", "cat; env;"]
         # some extra environment variables that will be injected.
         env:
           - "CUSTOM_ENV_VAR1=hello"
           - "CUSTOM_ENV_VAR2=world!"
+
+    # ... of course you can configure more than one webhook!
+    # This one here uses githubstyle authentication:
+    # curl -H 'x-hub-signature: sha1=01f8da98455877d8beefe6e8276d59ac102857d5' -X POST -d '{"some": ["random", "json"]}' http://localhost:8080/example-github/
+    example-github:
+      security:
+        type: github
+        secret: super secret
+      action:
+        type: shell
+        response: true
+        cmd: "/bin/sh"
+        args: ["-c", "cat; env;"]
+        env:
+          - "CUSTOM_ENV_VAR1=hello"
+          - "CUSTOM_ENV_VAR2=world!"
+
+    # this example shows how to pass along values from the request:
+    # curl -v -X POST -d '{"some": [{"random": "value", "nested": {"value": "json"}}]}'  -H 'Content-type: application/json' http://localhost:8080/example-with-template-insecure/
+    #
+    # WARNING: If your planing to use values from request as arguments
+    #          beware of command-injection attacks. Take security measures, eg proper escaping etc
+    #          https://owasp.org/www-community/attacks/Command_Injection
+    #          NEVER DO IT THIS WAY!! It is just an example to show what is possible.
+    example-with-template-insecure:
+      security:
+        type: none
+      action:
+        type: shell
+        response: true
+        cmd: "/bin/sh"
+        args:
+          - '-c'
+          - |
+              echo 'CUSTOM_ENV_VAR_COMMAND=$CUSTOM_ENV_VAR_COMMAND';
+              echo 'Request from: {{ .Request.RemoteAddr }}';
+              echo 'Content-type: {{ index .Request.Header "content-type" }}';
+              echo 'Body: {{ .Request.Body }}';
+              echo 'Value: "{{ index .Request.Json.some 0 "random" }}" from "{{ index .Request.Json.some 0 "nested" "value" }}"';
+        env:
+          - 'CUSTOM_ENV_VAR_COMMAND={{ index .Env "PWD" }}'
+
+    # ... this example shows two more secure ways of doing the same
+    # curl -v -X POST -d '{"some": [{"random": "value", "nested": {"value": "json"}}]}'  -H 'Content-type: application/json' http://localhost:8080/example-with-template/
+    example-with-template:
+      security:
+        type: none
+      action:
+        type: shell
+        response: true
+        cmd: "/bin/sh"
+        args:
+          - '-c'
+          - |
+              # either using environment variables like this
+              echo CUSTOM_ENV_VAR_COMMAND=${CUSTOM_ENV_VAR_COMMAND};
+              echo Request from: ${CUSTOM_ENV_VAR_REQUEST_FROM};
+              echo Content-type: ${CUSTOM_ENV_VAR_REQUEST_CTYPE};
+              echo Body: ${CUSTOM_ENV_VAR_REQUEST_BODY};
+              echo Value: ${CUSTOM_ENV_VAR_REQUEST_VALUE};
+
+              # or take the arguments directly
+              echo CUSTOM_ENV_VAR_COMMAND=${0};
+              echo Request from: ${1};
+              echo Content-type: ${2};
+              echo Body: ${3};
+              echo Value: ${4};
+
+          - '{{ index .Env "PWD" }}'
+          - '{{ .Request.RemoteAddr }};'
+          - '{{ index .Request.Header "content-type" }}'
+          - '{{ .Request.Body }}'
+          - '"{{ index .Request.Json.some 0 "random" }}" from "{{ index .Request.Json.some 0 "nested" "value" }}"'
+        env:
+          - 'CUSTOM_ENV_VAR_COMMAND={{ index .Env "PWD" }}'
+          - 'CUSTOM_ENV_VAR_REQUEST_FROM={{ .Request.RemoteAddr }}'
+          - 'CUSTOM_ENV_VAR_REQUEST_CTYPE={{ index .Request.Header "content-type" }}'
+          - 'CUSTOM_ENV_VAR_REQUEST_BODY={{ .Request.Body }}'
+          - 'CUSTOM_ENV_VAR_REQUEST_VALUE="{{ index .Request.Json.some 0 "random" }}" from "{{ index .Request.Json.some 0 "nested" "value" }}"'
+

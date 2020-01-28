@@ -5,8 +5,10 @@ import (
 	"github.com/phramz/webhug/internal/config"
 	"github.com/phramz/webhug/internal/contract"
 	"github.com/phramz/webhug/internal/logger"
+	"github.com/phramz/webhug/pkg/tpl"
 	"github.com/spf13/viper"
 	"net/http"
+	"os"
 )
 
 var (
@@ -30,14 +32,18 @@ func main() {
 
 func handle(path string, wh contract.Webhook) {
 	http.HandleFunc(path, func(w http.ResponseWriter, r *http.Request) {
-		if !wh.GetSecurity().IsGranted(wh, r) {
+		ctx := tpl.DefaultContext(os.Environ())
+		ctx = tpl.AddRequestContext(ctx, r)
+		ctx = tpl.AddWebhookContext(ctx, wh)
+
+		if !wh.GetSecurity().IsGranted(ctx) {
 			w.WriteHeader(http.StatusForbidden)
-			w.Write([]byte("403 - Forbidden"))
+			_, _ = w.Write([]byte("403 - Forbidden"))
 
 			return
 		}
 
 		w.WriteHeader(http.StatusOK)
-		wh.GetAction().Dispatch(wh, r, w)
+		wh.GetAction().Dispatch(ctx, w)
 	})
 }

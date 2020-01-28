@@ -3,7 +3,8 @@ package security
 import (
 	"fmt"
 	"github.com/phramz/webhug/internal/contract"
-	"net/http"
+	"github.com/phramz/webhug/pkg/tpl"
+	"net/textproto"
 )
 
 type header struct {
@@ -11,17 +12,18 @@ type header struct {
 	value string
 }
 
-func (hdr *header) IsGranted(wh contract.Webhook, rq *http.Request) bool {
-	actual := rq.Header.Get(hdr.key)
+func (hdr *header) IsGranted(ctx *contract.Context) bool {
+	expectedVal := tpl.MustRender(hdr.value, ctx)
+	expectedHdr := tpl.MustRender(hdr.key, ctx)
+	actual := tpl.MustRender(fmt.Sprintf(`{{ index .Request.Header "%s" }}`, textproto.CanonicalMIMEHeaderKey(expectedHdr)), ctx)
 
-	if actual != hdr.value {
-
-		log.Infof("[%s] access denied from %s. Reason: %s", wh.GetName(), rq.RemoteAddr,
-			fmt.Sprintf("wrong request header '%s: %s' ", hdr.key, actual))
+	if actual != expectedVal {
+		reason := fmt.Sprintf("wrong request header '%s: %s' ", expectedHdr, actual)
+		log.Infof(tpl.MustRender(`[{{ .Webhook.Name }}] access denied from {{ .Request.RemoteAddr }}. Reason %s`, ctx), reason)
 
 		return false
 	}
 
-	log.Infof("[%s] access granted from %s", wh.GetName(), rq.RemoteAddr)
+	log.Infof(tpl.MustRender(`[{{ .Webhook.Name }}] access granted from {{ .Request.RemoteAddr }}`, ctx))
 	return true
 }

@@ -2,13 +2,13 @@ package security
 
 import (
 	"github.com/phramz/webhug/internal/contract"
-	"net/http"
+	"github.com/phramz/webhug/pkg/tpl"
 )
 
 type deny struct {
 }
 
-func (n *deny) IsGranted(wh contract.Webhook, rq *http.Request) bool {
-	log.Infof("[%s] access denied from %s", wh.GetName(), rq.RemoteAddr)
+func (n *deny) IsGranted(ctx *contract.Context) bool {
+	log.Infof(tpl.MustRender(`[{{ .Webhook.Name }}] access denied from {{ .Request.RemoteAddr }}`, ctx))
 	return false
 }

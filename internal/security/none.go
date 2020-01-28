@@ -2,14 +2,14 @@ package security
 
 import (
 	"github.com/phramz/webhug/internal/contract"
-	"net/http"
+	"github.com/phramz/webhug/pkg/tpl"
 )
 
 type none struct {
 }
 
-func (n *none) IsGranted(wh contract.Webhook, rq *http.Request) bool {
-	log.Infof("[%s] access granted from %s", wh.GetName(), rq.RemoteAddr)
+func (n *none) IsGranted(ctx *contract.Context) bool {
+	log.Infof(tpl.MustRender(`[{{ .Webhook.Name }}] access granted from {{ .Request.RemoteAddr }}`, ctx))
 
 	return true
 }
