@@ -45,7 +45,7 @@ func handle(path string, wh contract.Webhook) {
 
 		success, _ := wh.GetAction().Dispatch(ctx, w)
 
-		if success || wh.GetAction().HasResponse() {
+		if success || !wh.GetAction().HasResponse() {
 			w.WriteHeader(http.StatusOK)
 			return
 		}
