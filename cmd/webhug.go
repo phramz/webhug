@@ -45,13 +45,17 @@ func handle(path string, wh contract.Webhook) {
 
 		success, _ := wh.GetAction().Dispatch(ctx, w)
 
-		if success || !wh.GetAction().HasResponse() {
+		if wh.GetAction().HasResponse() {
+			return
+		}
+
+		if success {
 			w.WriteHeader(http.StatusOK)
+			_, _ = w.Write([]byte("200 - OK"))
 			return
 		}
 
 		w.WriteHeader(http.StatusUnprocessableEntity)
 		_, _ = w.Write([]byte("422 - Unprocessable Entity"))
-		return
 	})
 }
