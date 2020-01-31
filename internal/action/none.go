@@ -10,8 +10,10 @@ type none struct {
 	response bool
 }
 
-func (n *none) Dispatch(ctx *contract.Context, res http.ResponseWriter) {
+func (n *none) Dispatch(ctx *contract.Context, res http.ResponseWriter) (bool, error) {
 	log.Infof(tpl.MustRender(`[{{ .Webhook.Name }}] running action none`, ctx))
+
+	return true, nil
 }
 
 func (n *none) HasResponse() bool {

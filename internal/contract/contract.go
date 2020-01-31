@@ -39,7 +39,7 @@ type Webhook interface {
 }
 
 type Action interface {
-	Dispatch(ctx *Context, res http.ResponseWriter)
+	Dispatch(ctx *Context, res http.ResponseWriter) (bool, error)
 	HasResponse() bool
 }
 

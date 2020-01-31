@@ -24,7 +24,7 @@ func (sh *shell) HasResponse() bool {
 	return sh.response
 }
 
-func (sh *shell) Dispatch(ctx *contract.Context, res http.ResponseWriter) {
+func (sh *shell) Dispatch(ctx *contract.Context, res http.ResponseWriter) (bool, error) {
 	whName := tpl.MustRender(`{{ .Webhook.Name }}`, ctx)
 	log.Infof("[%s] running action shell: %s", whName, sh.cmd)
 
@@ -46,7 +46,7 @@ func (sh *shell) Dispatch(ctx *contract.Context, res http.ResponseWriter) {
 		}
 		log.Error(msg)
 
-		return
+		return false, err
 	}
 
 	wg := ioDispatcher(ctx, sh, res, stdoutPipe, stderrPipe)
@@ -60,14 +60,16 @@ func (sh *shell) Dispatch(ctx *contract.Context, res http.ResponseWriter) {
 		}
 		log.Error(msg)
 
-		return
+		return false, err
 	}
 
-	msg := fmt.Sprintf("[%s] action completed: %s", whName, err)
+	msg := fmt.Sprintf("[%s] action completed", whName)
 	if sh.response {
 		_, _ = res.Write([]byte(fmt.Sprintf("%s\n", msg)))
 	}
-	log.Error(msg)
+	log.Info(msg)
+
+	return true, nil
 }
 
 func ioDispatcher(ctx *contract.Context, sh *shell, res http.ResponseWriter, stdoutPipe io.ReadCloser, stderrPipe io.ReadCloser) *sync.WaitGroup {
