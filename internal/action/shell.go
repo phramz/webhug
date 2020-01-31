@@ -40,7 +40,13 @@ func (sh *shell) Dispatch(ctx *contract.Context, res http.ResponseWriter) {
 
 	err := cmd.Start()
 	if err != nil {
-		log.Errorf("[%s] action failed: %s", whName, err)
+		msg := fmt.Sprintf("[%s] action failed: %s", whName, err)
+		if sh.response {
+			_, _ = res.Write([]byte(msg))
+		}
+		log.Error(msg)
+
+		return
 	}
 
 	wg := ioDispatcher(ctx, sh, res, stdoutPipe, stderrPipe)
@@ -53,7 +59,15 @@ func (sh *shell) Dispatch(ctx *contract.Context, res http.ResponseWriter) {
 			_, _ = res.Write([]byte(msg))
 		}
 		log.Error(msg)
+
+		return
 	}
+
+	msg := fmt.Sprintf("[%s] action completed: %s", whName, err)
+	if sh.response {
+		_, _ = res.Write([]byte(msg))
+	}
+	log.Error(msg)
 }
 
 func ioDispatcher(ctx *contract.Context, sh *shell, res http.ResponseWriter, stdoutPipe io.ReadCloser, stderrPipe io.ReadCloser) *sync.WaitGroup {
@@ -63,12 +77,12 @@ func ioDispatcher(ctx *contract.Context, sh *shell, res http.ResponseWriter, std
 	go func() {
 		scanner := bufio.NewScanner(stdoutPipe)
 		for scanner.Scan() {
-			msg := fmt.Sprintf("[%s] %s\n", whName, scanner.Text())
+			msg := scanner.Text()
 			if sh.response {
 				_, _ = res.Write([]byte(msg))
 				res.(http.Flusher).Flush()
 			}
-			log.Info(msg)
+			log.Info(fmt.Sprintf("[%s] %s\n", whName, msg))
 		}
 		wg.Done()
 	}()
@@ -77,12 +91,12 @@ func ioDispatcher(ctx *contract.Context, sh *shell, res http.ResponseWriter, std
 	go func() {
 		scanner := bufio.NewScanner(stderrPipe)
 		for scanner.Scan() {
-			msg := fmt.Sprintf("[%s] %s\n", whName, scanner.Text())
+			msg := scanner.Text()
 			if sh.response {
 				_, _ = res.Write([]byte(msg))
 				res.(http.Flusher).Flush()
 			}
-			log.Warning(msg)
+			log.Warning(fmt.Sprintf("[%s] %s\n", whName, msg))
 		}
 
 		wg.Done()

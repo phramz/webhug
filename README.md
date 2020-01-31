@@ -251,7 +251,6 @@ environment variables will be available by default:
 - `WEBHUG_REQUEST_METHOD`: The request method
 - `WEBHUG_REQUEST_REMOTE_ADDR`: The remote address which triggered the action
 
-Furthermore the raw request body will be piped to stdin of the shell command.
 
 ### Templating
 
@@ -269,14 +268,14 @@ The actual keys which values could be templated the following:
 
 During rendering you have access to this data:
 ```go
-type Context struct {
+struct {
     // all environment variable of the context webhug is running in are here
     Env            map[string]string
-    Webhook struct {
+    Webhook        struct {
         Name       string
         Format     string
     }
-    Request struct {
+    Request        struct {
         Body       string
         Method     string
         // if a POST request comes with a json content-type header
