@@ -2,15 +2,11 @@ package webhook
 
 import (
 	"fmt"
+
 	"github.com/phramz/webhug/internal/action"
 	"github.com/phramz/webhug/internal/contract"
-	"github.com/phramz/webhug/internal/logger"
 	"github.com/phramz/webhug/internal/security"
 	"github.com/spf13/viper"
-)
-
-var (
-	log = logger.Logger()
 )
 
 func FromConfig(name string) contract.Webhook {

@@ -1,29 +1,35 @@
-# vim: noexpandtab filetype=make
-GIT_REVISION := $(shell git rev-parse HEAD | cut -c 1-10)
-RELEASE_VERSION := $(or $(RELEASE_VERSION), $(or $(GIT_REVISION), dev))
+BUILD_COMMIT:=$(or $(BUILD_COMMIT),$(shell git rev-parse --short HEAD))
 
-.PHONY: build
-build: configure
-	go build cmd/webhug.go
-
-.PHONY: image
-image:
-	docker build --build-arg RELEASE_VERSION=$(RELEASE_VERSION) \
-		 -t webhug -t webhug:$(RELEASE_VERSION) \
-		 --file ./Dockerfile .
-
-.PHONY: configure
-configure:
+.PHONY: vendors
+vendors:
 	go mod download
 
-.PHONY: test
-test: configure
-	go test ./...
+.PHONY: format
+format:
+	go fmt ./...
 
-.PHONY: push
-push:
-	@docker login -u '$(DOCKERHUB_USERNAME)' -p '$(DOCKERHUB_TOKEN)'
-	docker tag webhug:$(RELEASE_VERSION) $(DOCKERHUB_USERNAME)/webhug:$(RELEASE_VERSION)
-	docker tag webhug:$(RELEASE_VERSION) $(DOCKERHUB_USERNAME)/webhug:latest
-	docker push $(DOCKERHUB_USERNAME)/webhug:$(RELEASE_VERSION)
-	docker push $(DOCKERHUB_USERNAME)/webhug:latest
+.PHONY: lint
+lint:
+	docker run --rm -v $(shell pwd):/app -w /app golangci/golangci-lint golangci-lint run
+
+.PHONY: test
+test:
+	go test -race -cover ./...
+
+.PHONY: run
+run:
+	go run cmd/webhug.go
+
+.PHONY: build
+build: vendors
+	mkdir -p build/bin
+	CGO_ENABLED=0 go build -a -ldflags '-s' -installsuffix cgo -o build/bin/webhug cmd/webhug.go
+
+.PHONY: build-docker
+build-docker:
+	docker build -f Dockerfile \
+		--build-arg "BUILD_COMMIT=$(BUILD_COMMIT)" \
+		-t webhug \
+		-t webhug:latest \
+		-t webhug:$(BUILD_COMMIT) \
+		 .

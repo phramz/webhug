@@ -1,23 +1,26 @@
-FROM golang:1.13-alpine3.11 as base
+# builder: golang
+FROM golang:1.19-alpine as builder
 
-RUN mkdir -p /code/build
-WORKDIR /code
+WORKDIR /.build
 
-COPY . .
-RUN apk add --no-cache build-base && make build
+COPY go.mod go.sum ./
+RUN go mod download
 
-FROM docker:19.03 as final
+COPY . ./
 
-ARG RELEASE_VERSION
-ENV RELEASE_VERSION=${RELEASE_VERSION}
+# see https://medium.com/@diogok/on-golang-static-binaries-cross-compiling-and-plugins-1aed33499671
+RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -tags netgo -ldflags '-w -extldflags "-static"' -o ./bin/webhug cmd/webhug.go
 
-RUN mkdir -p /root/.webhug/actions
+# final layer
+FROM scratch as final
 
-WORKDIR /root/.webhug/
-COPY --from=base /code/webhug /usr/bin/webhug
-COPY --from=base /code/config.yaml /root/.webhug/config-example.yaml
+COPY --from=alpine:latest /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/
+COPY --from=builder /.build/bin/webhug /bin/webhug
+COPY --from=builder /.build/config.yaml /etc/webhug/config-example.yaml
 
-EXPOSE 8080
+ARG BUILD_COMMIT=dev
+ENV BUILD_COMMIT=$BUILD_COMMIT
+ARG BUILD_VERSION=dev
+ENV BUILD_VERSION=$BUILD_VERSION
 
-ENTRYPOINT ["/usr/bin/webhug"]
-
+ENTRYPOINT ["/bin/webhug"]
