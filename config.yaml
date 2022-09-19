@@ -102,4 +102,3 @@ webhug:
           - 'CUSTOM_ENV_VAR_REQUEST_CTYPE={{ index .Request.Header "content-type" }}'
           - 'CUSTOM_ENV_VAR_REQUEST_BODY={{ .Request.Body }}'
           - 'CUSTOM_ENV_VAR_REQUEST_VALUE="{{ index .Request.Json.some 0 "random" }}" from "{{ index .Request.Json.some 0 "nested" "value" }}"'
-

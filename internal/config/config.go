@@ -2,6 +2,7 @@ package config
 
 import (
 	"fmt"
+
 	"github.com/phramz/webhug/internal/contract"
 	"github.com/phramz/webhug/internal/logger"
 	"github.com/phramz/webhug/internal/webhook"
@@ -36,7 +37,7 @@ func MustReadConfig() []contract.Webhook {
 func parseWebhooks(webhooks map[string]interface{}) []contract.Webhook {
 	var whs []contract.Webhook
 
-	for name, _ := range webhooks {
+	for name := range webhooks {
 		whs = append(whs, webhook.FromConfig(name))
 	}
 

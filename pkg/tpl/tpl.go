@@ -2,13 +2,14 @@ package tpl
 
 import (
 	"encoding/json"
-	"fmt"
-	"github.com/phramz/webhug/internal/contract"
-	"github.com/phramz/webhug/internal/logger"
-	"io/ioutil"
+	"io"
 	"net/http"
+	"net/textproto"
 	"net/url"
 	"strings"
+
+	"github.com/phramz/webhug/internal/contract"
+	"github.com/phramz/webhug/internal/logger"
 )
 
 var (
@@ -30,9 +31,9 @@ func DefaultContext(environ []string) *contract.Context {
 }
 
 func AddRequestContext(context *contract.Context, rq *http.Request) *contract.Context {
-	body, err := ioutil.ReadAll(rq.Body)
+	body, err := io.ReadAll(rq.Body)
 	if nil == err {
-		context.Request.Body = fmt.Sprintf("%s", body)
+		context.Request.Body = string(body)
 		var j interface{}
 
 		ctype := rq.Header.Get("content-type")
@@ -80,6 +81,7 @@ func parseHeader(header http.Header) map[string]string {
 	for name, hdrs := range header {
 		for _, hdr := range hdrs {
 			hdrVars[strings.ToLower(name)] = hdr
+			hdrVars[textproto.CanonicalMIMEHeaderKey(name)] = hdr
 		}
 	}
 
