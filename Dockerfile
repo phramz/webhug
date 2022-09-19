@@ -12,7 +12,7 @@ COPY . ./
 RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -tags netgo -ldflags '-w -extldflags "-static"' -o ./bin/webhug cmd/webhug.go
 
 # final layer
-FROM scratch as final
+FROM alpine:latest as final
 
 COPY --from=alpine:latest /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/
 COPY --from=builder /.build/bin/webhug /bin/webhug
