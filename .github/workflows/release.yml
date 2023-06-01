@@ -22,7 +22,7 @@ jobs:
       - id: vars
         run: echo "::set-output name=sha_short::$(git rev-parse --short HEAD)"
 
-      - uses: SOLIDSoftworks/semver-tags@v1.5.2
+      - uses: SOLIDSoftworks/semver-tags@v1.5.3
         id: semver
         with:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
