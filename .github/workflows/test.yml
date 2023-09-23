@@ -12,7 +12,7 @@ jobs:
         - uses: actions/setup-go@v4
           with:
               go-version: 1.19
-        - uses: actions/checkout@v3
+        - uses: actions/checkout@v4
         - name: golangci-lint
           uses: golangci/golangci-lint-action@v3
 
@@ -20,7 +20,7 @@ jobs:
     name: Unit
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - name: Dependencies
         run: go mod download
       - name: Unit test
@@ -33,7 +33,7 @@ jobs:
       - unit
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - name: Build
         id: docker_build
         uses: docker/build-push-action@v5
