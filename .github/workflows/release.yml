@@ -37,7 +37,7 @@ jobs:
 
       - name: Build
         id: docker_build
-        uses: docker/build-push-action@v5
+        uses: docker/build-push-action@v6
         with:
           push: true
           tags: ${{ secrets.DOCKERHUB_USERNAME }}/webhug:${{ steps.semver.outputs.semantic-version }},${{ secrets.DOCKERHUB_USERNAME }}/webhug
